@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Агент бекапов — установка</title>
+<meta name="description" content="Скачать и настроить агент резервного копирования: VSS-снимок, 7-Zip, копия на NAS, уведомления в Telegram.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23126b5c'/%3E%3Cpath d='M9 17l5 5 9-12' stroke='white' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #efece4;
+  --text: #1c1f1e;
+  --muted: #5d6461;
+  --line: #dcd7cb;
+  --accent: #126b5c;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcefe9;
+  --shadow: 0 1px 2px rgba(30, 30, 20, .06), 0 8px 24px rgba(30, 30, 20, .06);
+  --radius: 14px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121615;
+    --surface: #1a1f1e;
+    --surface-2: #222827;
+    --text: #e6ebe8;
+    --muted: #9aa5a0;
+    --line: #2f3735;
+    --accent: #3fb59c;
+    --accent-ink: #08201b;
+    --accent-soft: #173a33;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 var(--font); -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+code { font-family: var(--mono); font-size: .9em; background: var(--surface-2); padding: .1em .35em; border-radius: 5px; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+
+/* ---------- шапка ---------- */
+header.hero { padding: 56px 0 40px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.1; margin: 10px 0 14px; letter-spacing: -.02em; }
+.lead { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 26px 0 30px; font-size: 14px; }
+.flow span { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
+.flow i { color: var(--muted); font-style: normal; }
+.cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 12px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none;
+  box-shadow: var(--shadow); transition: transform .15s ease, filter .15s ease;
+}
+.btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.btn svg { width: 20px; height: 20px; }
+.btn-ghost { background: var(--surface); color: var(--accent); border: 1px solid var(--line); box-shadow: none; }
+.bot-head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: baseline; justify-content: space-between; }
+.bot-head a { font-weight: 600; }
+.card .ico { font-size: 22px; line-height: 1; margin-bottom: 10px; }
+.cta small { color: var(--muted); }
+
+/* ---------- секции ---------- */
+section { padding: 44px 0 8px; }
+h2 { font-size: 26px; letter-spacing: -.01em; margin: 0 0 6px; }
+h2 + p.sub { color: var(--muted); margin: 0 0 22px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 18px 14px; box-shadow: var(--shadow); }
+.card h4 { margin: 0 0 6px; font-size: 16px; }
+.card p { margin: 0 0 6px; color: var(--muted); font-size: 15px; }
+.card .n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+
+ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; }
+ol.steps > li { counter-increment: s; position: relative; padding: 0 0 22px 52px; }
+ol.steps > li::before {
+  content: counter(s); position: absolute; left: 0; top: -2px; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 700;
+}
+ol.steps > li:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 38px; bottom: 6px; width: 2px; background: var(--line); }
+ol.steps strong { display: block; margin-bottom: 2px; }
+ol.steps ul { margin: 6px 0 0; padding-left: 20px; color: var(--muted); }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 16px 0; }
+.note p { margin: 0; }
+
+footer { margin-top: 48px; padding: 28px 0 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+
+@media (max-width: 600px) {
+  header.hero { padding-top: 36px; }
+  ol.steps > li { padding-left: 46px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Мониторинг бекапов · агент для Windows</div>
+    <h1>Бекапы офиса — без выгона пользователей<br>и с отчётом в Telegram</h1>
+    <p class="lead">Агент по расписанию делает снимок диска, архивирует базы 1С и документы 7-Zip, кладёт копию на NAS и сообщает результат боту. Если бекап не пришёл вовремя — бот напомнит.</p>
+    <div class="flow" aria-label="Схема работы">
+      <span>📸 снимок VSS</span><i>→</i><span>🗜 архив 7-Zip</span><i>→</i><span>✔ проверка</span><i>→</i><span>🗄 копия на NAS</span><i>→</i><span>💬 отчёт в бот</span>
+    </div>
+    <div class="cta">
+      <a class="btn" href="/backup-agent.zip" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+        Скачать агент (.zip)
+      </a>
+      <a class="btn btn-ghost" href="https://t.me/OfficeInformerBot" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4L3 11l6 2.5M21 4l-4 16-8-6.5M21 4L9 13.5V19l3-3"/></svg>
+        Открыть бота
+      </a>
+      <small>Windows 10/11, Server 2012 R2 и новее · нужны права администратора</small>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="prepare">
+  <h2>Что подготовить</h2>
+  <p class="sub">Понадобится до начала установки.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="n">1</div>
+      <h4>Токен компании</h4>
+      <p>В Telegram-боте мониторинга: <b>🏢 Компании → компания → 🔑 Токен</b>.</p>
+    </div>
+    <div class="card">
+      <div class="n">2</div>
+      <h4>Папка на NAS</h4>
+      <p>Сетевой путь, куда складывать бекапы, например <code>\\192.168.1.10\backup</code>.</p>
+    </div>
+    <div class="card">
+      <div class="n">3</div>
+      <h4>Права администратора</h4>
+      <p>На компьютере, где лежат данные, — базы 1С и документы.</p>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <h2>Установка</h2>
+  <p class="sub">Один раз на каждую машину, где лежат данные.</p>
+  <ol class="steps">
+    <li><strong>Скачайте и разблокируйте архив</strong>
+      Правый клик по <code>backup-agent.zip</code> → <b>Свойства</b> → галочка <b>«Разблокировать»</b> → OK. Иначе Windows будет предупреждать при запуске.</li>
+    <li><strong>Распакуйте на локальный диск</strong>
+      Например, на рабочий стол. Не на сетевой диск: после запроса прав администратора сетевые диски с буквой не видны.</li>
+    <li><strong>Запустите <code>Install.cmd</code> и подтвердите права администратора</strong>
+      Установщик всё сделает по шагам и задаст несколько вопросов:
+      <ul>
+        <li>адрес сервера — просто нажмите Enter;</li>
+        <li><b>токен компании</b> — установщик проверит его и покажет название компании;</li>
+        <li><b>папку на NAS</b> — установщик проверит, что туда можно писать.</li>
+      </ul>
+      7-Zip, если его нет, установщик поставит сам.</li>
+    <li><strong>Опишите, что копировать</strong>
+      В конце откроется Блокнот с файлом заданий и примером внутри — впишите свои папки и время, сохраните и закройте.</li>
+    <li><strong>Готово</strong>
+      Бекапы пойдут по расписанию, а результат каждого будет приходить в Telegram-бот.</li>
+  </ol>
+  <div class="note"><p>Нужно что-то поменять — запустите <code>C:\BackupAgent\Install.cmd</code> ещё раз: текущие значения предлагаются по умолчанию, достаточно нажимать Enter.</p></div>
+</section>
+
+<section id="bot">
+  <div class="bot-head">
+    <h2>Telegram-бот</h2>
+    <a href="https://t.me/OfficeInformerBot" target="_blank" rel="noopener">@OfficeInformerBot →</a>
+  </div>
+  <p class="sub">Все бекапы всех компаний — в одном чате. Заходить на компьютеры, чтобы проверить, не нужно.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="ico">✅ ⚠️ ❌</div>
+      <h4>Отчёт о каждом бекапе</h4>
+      <p>Сразу после запуска: успешно, с предупреждениями или ошибка — с причиной и размером архива. Успешные приходят без звука.</p>
+    </div>
+    <div class="card">
+      <div class="ico">⏰</div>
+      <h4>Бекап не пришёл</h4>
+      <p>Если отчёта нет дольше положенного — компьютер выключен или задание сломалось, — бот предупредит и будет напоминать раз в сутки.</p>
+    </div>
+    <div class="card">
+      <div class="ico">📊</div>
+      <h4>Сводка и меню</h4>
+      <p>Каждое утро в 09:00 — сводка по всем компаниям. Кнопки <b>Сводка · Компании · Проблемы</b>: история запусков и вывод 7-Zip по каждому заданию.</p>
+    </div>
+  </div>
+  <div class="note"><p>Бот отвечает только администраторам. Напишите ему <code>/start</code> — он покажет ваш id, который нужно добавить в настройки сервера. Новая компания и её токен: <code>/add_company Название</code>.</p></div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">Агент бекапов · вопросы и токены — в Telegram-боте мониторинга.</div>
+</footer>
+</body>
+</html>

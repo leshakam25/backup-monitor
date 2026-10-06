@@ -1,0 +1,16 @@
+[Unit]
+Description=Backup monitoring Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=backupbot
+WorkingDirectory=/opt/backup-bot
+ExecStart=/opt/backup-bot/.venv/bin/python -m backup_bot
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

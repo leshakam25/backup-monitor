@@ -1,0 +1,14 @@
+# секреты и локальные данные
+.env
+*.sqlite3*
+agent/agent.config.psd1
+agent/jobs.psd1
+agent/data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# собирается deploy/shared-host/deploy.ps1 при каждом деплое
+server/backup_bot/static/backup-agent.zip

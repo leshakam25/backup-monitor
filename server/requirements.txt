@@ -1,0 +1,3 @@
+aiogram>=3.13,<4
+aiohttp-socks>=0.8      # прокси для Telegram (TELEGRAM_PROXY)
+tzdata                  # часовые пояса в slim-образах

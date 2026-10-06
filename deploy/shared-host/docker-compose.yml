@@ -1,0 +1,61 @@
+# Бот мониторинга бекапов на сервере, где уже работают внешний Traefik и AWG-прокси (/opt/backup_bot).
+#
+#   агенты ──HTTPS──> внешний traefik ──backup_proxy──> bot:8080
+#   bot ──awg_backup──> awg:3128 (внешний AWG-прокси, HTTP CONNECT) ──туннель──> api.telegram.org
+#
+# Свой Traefik и AmneziaWG этот стек НЕ поднимает: порты 80/443 уже заняты внешним Traefik,
+# а второй AWG-клиент с тем же ключом уронил бы туннель. Сети изолированы и объявлены external:
+#   backup_proxy — сеть внешнего Traefik для этого бота (в ней только traefik и бот);
+#   awg_backup   — сеть AWG-прокси для этого бота (в ней только awg и бот).
+# Traefik должен иметь entrypoints web/websecure и certresolver le.
+#
+# Порядок: внешние стеки подняты (их сети существуют) -> этот стек up.
+# Деплой с ПК: deploy/shared-host/deploy.ps1 -VdsHost <ssh-хост> -Up
+
+name: backup-monitor
+
+services:
+  bot:
+    build: ./server
+    image: backup-bot:local
+    container_name: backup-bot
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LISTEN_HOST: 0.0.0.0
+      LISTEN_PORT: "8080"
+      DB_PATH: /data/backup_bot.sqlite3
+      TELEGRAM_PROXY: ${TELEGRAM_PROXY-http://awg:3128}
+    volumes:
+      - bot-data:/data
+    networks:
+      - backup_proxy
+      - awg_backup
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=backup_proxy
+      # http -> https (глобального редиректа у общего traefik нет)
+      - traefik.http.routers.backupbot-http.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.backupbot-http.entrypoints=web
+      - traefik.http.routers.backupbot-http.middlewares=backupbot-https
+      - traefik.http.middlewares.backupbot-https.redirectscheme.scheme=https
+      # наружу — страница установки агента, архив агента, приём отчётов, проверка токена и healthcheck
+      - traefik.http.routers.backupbot.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/backup-agent.zip`) || Path(`/api/report`) || Path(`/api/ping`) || Path(`/health`))
+      - traefik.http.routers.backupbot.entrypoints=websecure
+      - traefik.http.routers.backupbot.tls=true
+      - traefik.http.routers.backupbot.tls.certresolver=le
+      - traefik.http.services.backupbot.loadbalancer.server.port=8080
+
+networks:
+  backup_proxy:
+    external: true
+  awg_backup:
+    external: true
+
+volumes:
+  bot-data:

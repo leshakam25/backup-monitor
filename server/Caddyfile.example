@@ -1,0 +1,16 @@
+# /etc/caddy/Caddyfile — Caddy сам получит и будет продлевать сертификат Let's Encrypt.
+# Нужно: DNS-запись backup.example.ru -> IP вашего VPS, открытые порты 80 и 443.
+backup.example.ru {
+    handle /api/report {
+        reverse_proxy 127.0.0.1:8080
+    }
+    handle /api/ping {
+        reverse_proxy 127.0.0.1:8080
+    }
+    handle /health {
+        reverse_proxy 127.0.0.1:8080
+    }
+    handle {
+        respond 404
+    }
+}
